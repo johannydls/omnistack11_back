@@ -3,8 +3,40 @@ const connection = require('../database/connection');
 module.exports = {
 
   async index(req, res) {
-    const incidents = await connection('incidents').select('*');
-    return res.json(incidents);
+
+    const { page = 1 } = req.query;
+    const limit = 5;
+    const previousPage = Number(page) - 1;
+    const nextPage = Number(page) + 1;
+
+    /*const countPrevious = await connection('incidents').limit(5).offset((previousPage) * limit);
+    const countNext = await connection('incidents').limit(5).offset((nextPage) * limit);*/
+
+    const [count] = await connection('incidents').count();
+
+    const incidents = await connection('incidents')
+      .join('ongs', 'ongs.id', '=', 'incidents.ong_id')
+      .limit(limit)
+      .offset((page - 1) * limit)
+      .select([
+        'incidents.*', 
+        'ongs.name', 
+        'ongs.email', 
+        'ongs.whatsapp', 
+        'ongs.city', 
+        'ongs.uf'
+      ]);
+
+    res.header('X-Total-Count', count['count(*)']);
+    return res.json({
+      total: count['count(*)'],
+      page: page,
+      /*hasPrevious: previousPage === 0 ? false : (countPrevious.length > 0 ? true : false),
+      hasNext: countNext.length > 0 ? true : false,
+      previousPage: previousPage === 0 ? null : (countPrevious.length > 0 ? previousPage : null),
+      nextPage: countNext.length > 0 ? nextPage : null,*/
+      documents: incidents
+    });
   },
 
   async create(req, res) {

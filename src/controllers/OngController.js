@@ -9,14 +9,19 @@ module.exports = {
   },
 
   async create(req, res) {
-    const { name, email, whatsapp, city, uf } = req.body;
+    const { name, initials, email, whatsapp, city, uf } = req.body;
 
     const id = crypto.randomBytes(4).toString('HEX');
 
-    await connection('ongs').insert({
-      id, name, email, whatsapp, city, uf
-    });
+    try {
+      await connection('ongs').insert({
+        id, name, initials, email, whatsapp, city, uf
+      });
 
-    return res.json({ id });
+      return res.json({ id });
+    } catch(err) {
+      console.log(err);
+      return res.status(400).send({ err });
+    }
   }
 }
